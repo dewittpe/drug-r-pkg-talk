@@ -23,14 +23,14 @@ options(stringsAsFactors = FALSE)
 options(width = 62)
 
 library(knitr)
-library(devtools)
+# library(devtools)
 
 opts_chunk$set(fig.align = "center",
                fig.pos   = "!htp",
                size      = "footnotesize", 
                cache     = FALSE, 
                dev       = "pdf",
-               error     = FALSE,      # stop knitr if chunk has R error
+               error     = TRUE,
                tidy      = FALSE) 
 @
 
@@ -85,14 +85,9 @@ opts_chunk$set(fig.align = "center",
 \begin{frame}[fragile]
   \frametitle{R set up}
 <<>>=
-library(devtools, quietly = TRUE)  # version 1.7.0
-library(dplyr,    quietly = TRUE)  # version 0.4.1
-library(magrittr, quietly = TRUE)  # version 1.5
-library(ggplot2,  quietly = TRUE)  # version 1.0.1
-
 # data set for examples
 data('diamonds', package = 'ggplot2')
-glimpse(diamonds)
+dplyr::glimpse(diamonds)
 @
 \end{frame}
 
@@ -478,12 +473,15 @@ devtools::with_libpaths("r-dev", devtools::install("mypackage/"))
 
 <<>>=
 rm(list = ls())
-# data("diamonds", package = "ggplot2")
-library(package = "mypackage", lib.loc = "r-dev")
-frmt(pi)
-# mead_sd(3.0, markdup = "markdown")
+data("diamonds", package = "ggplot2")
 
-## "3,932.80 \\$\\pm\\$ 3,989.44"
+# errors... package not loaded and attached
+mean_sd(diamonds$price, markup = "markdown")
+
+# Load and attach the package
+library(package = "mypackage", lib.loc = "r-dev/")
+mean_sd(diamonds$price)
+mean_sd(diamonds$price, markup = "markdown") 
 @
 \end{frame}
 
@@ -499,6 +497,7 @@ frmt(pi)
       \begin{itemize}
         \item Requires the package to be loaded.
         \item Does not require attaching a package.
+        \item Robust to end user's attached, and order of attaching, packages.
       \end{itemize}
 
     \item Example: lets look at the file {mypackage/R/qroc.R}
@@ -507,12 +506,71 @@ frmt(pi)
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Using the {\tt ::} operator}
-somthing
-
-
-something
+  \frametitle{Impact of calling code form other packages via {\tt ::}}
+  We can plot a ROC curve, but cannot change the theme to black and white
+  becuase {\tt ggplot2} is not attached.
+<<out.width="0.25\\textwidth">>=
+fit1 <- glm(formula = I(price > 2800) ~ cut * color, 
+            data    = diamonds, 
+            family  = binomial())
+qroc(fit1)
+qroc(fit1) + theme_bw()
+@ 
 \end{frame}
 
+\begin{frame}[fragile]
+<<out.width="0.25\\textwidth">>= 
+library(ggplot2)
+qroc(fit1) + theme_bw()
+@
+<<eval=FALSE>>=
+# The same graphic could be generated via
+qroc(fit1) + ggplot2::theme_bw() 
+# with or without attaching ggplot2
+@ 
+\end{frame}
+
+\begin{frame}[fragile] 
+  \frametitle{Compiled Code}
+  \begin{itemize}
+    \item Do you have some C++ code that you'd like to have access to in R?
+    \item {\tt Rcpp} will be very helpful!
+    \item {\tt Rcpp.package.skeleton()} and the Rcpp-package vignette for more
+      details.  
+  \end{itemize} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Package Checks}
+  \begin{itemize}
+    \item Use {\tt devtools::check()}, or 
+    \item {\tt R CMD check}.
+    \item[]
+    \item Getting a package, espeically your first one, to pass the check is
+      difficult.
+    \item Best documentation, and notes to help prevent common errors:
+      \url{http://r-pkgs.had.co.nz/check.html}
+  \end{itemize} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{My Suggestions}
+  \begin{itemize}
+    \item Thanks to {\tt devtools} writting a package for personal use is
+      reasonable for all levels of R users.
+    \item Write simple, short functions.  Many robust, simple, and specific
+      functions is preferable to a few complex functions.
+    \item Writting a package will help you learn a lot about how R works in
+      general.  It will help improve your coding overall.
+    \item It's FUN!
+    \item Having a package on CRAN is a nice `feather in your hat.' 
+    \item[]
+  \end{itemize}
+  \begin{center}
+    Thank you for listening.
+
+    Questions?
+  \end{center}
+\end{frame}
 
 \end{document}
