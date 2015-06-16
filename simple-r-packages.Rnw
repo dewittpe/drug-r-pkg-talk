@@ -1,0 +1,518 @@
+% ---------------------------------------------------------------------------- %
+% file:   simple-r-packages.Rnw
+% author: Peter DeWitt <peter.dewitt@ucdenver.edu>
+%
+% presentation on building simple R packages for the Denver R Users Group
+% Meetup on 18 June 2015
+%
+% ---------------------------------------------------------------------------- %
+
+\documentclass{beamer}
+
+\setbeamersize{text margin left=5pt,text margin right=5pt}
+\usefonttheme{serif} 
+\usepackage{verbatim}
+
+\author{Peter DeWitt\\peter.dewitt@ucdenver.edu}
+\date{18 June 2015}
+\title{An Introduction to Creating R Packages}
+\subtitle{Denver R Users Group\\www.meetup.com/DenverRUG}
+
+<<"setup", include = FALSE>>=
+options(stringsAsFactors = FALSE)
+options(width = 62)
+
+library(knitr)
+library(devtools)
+
+opts_chunk$set(fig.align = "center",
+               fig.pos   = "!htp",
+               size      = "footnotesize", 
+               cache     = FALSE, 
+               dev       = "pdf",
+               error     = FALSE,      # stop knitr if chunk has R error
+               tidy      = FALSE) 
+@
+
+% ---------------------------------------------------------------------------- %
+% ---------------------------------------------------------------------------- %
+\begin{document}
+
+% ---------------------------------------------------------------------------- %
+% Title page
+% ---------------------------------------------------------------------------- %
+\begin{frame}[fragile]
+  \maketitle
+\end{frame} 
+
+\begin{frame}[fragile]
+  \frametitle{Goals:}
+  \begin{itemize}
+    \item Show how to build an R package for personal use.
+    \item Show how to build an R package for everyone to use.
+      \begin{itemize}
+        \item github
+        \item Comprehensive R Archive Network (CRAN)
+      \end{itemize} 
+    \item Introduce some of the features of {\tt devtools}.
+  \end{itemize}
+\end{frame}
+
+\section{Simple Code}
+\begin{frame}[fragile]
+  \frametitle{Common Tasks?}
+  \begin{itemize}
+    \item Think about your life in code.
+    \begin{itemize}
+      \item How many tasks do you code regularly?
+      \item How many of these tasks have you created a general function for?
+      \item How do you reuse code?
+      \begin{itemize}
+        \item Rewrite? 
+        \item {\tt helpful-stuff.R}? 
+        \item A package? \end{itemize}
+    \end{itemize}
+  \item Let's consider two common tasks for examples:
+    \begin{enumerate}
+      \item Report the mean and standard deviation as a formated character
+        string.
+      \item Construct a receiver operating curve (ROC) for a logistic regression
+        model.
+    \end{enumerate}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{R set up}
+<<>>=
+library(devtools, quietly = TRUE)  # version 1.7.0
+library(dplyr,    quietly = TRUE)  # version 0.4.1
+library(magrittr, quietly = TRUE)  # version 1.5
+library(ggplot2,  quietly = TRUE)  # version 1.0.1
+
+# data set for examples
+data('diamonds', package = 'ggplot2')
+glimpse(diamonds)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Please don't do this}
+<<>>=
+mean_price <- mean(diamonds$price)
+mean_carat <- mean(diamonds$carat)
+mean_depth <- mean(diamonds$depth)
+sd_price   <- sd(diamonds$price)
+sd_carat   <- sd(diamonds$carat)
+sd_depth   <- sd(diamonds$depth)
+
+paste0(formatC(mean_price, digits = 2, format = "f"), " (", 
+       formatC(sd_price,   digits = 2, format = "f"), ")")
+paste0(formatC(mean_carat, digits = 2, format = "f"), " (", 
+       formatC(sd_carat,   digits = 2, format = "f"), ")")
+paste0(formatC(mean_depth, digits = 2, format = "f"), " (", 
+       formatC(sd_depth,   digits = 2, format = "f"), ")")
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Better, but \ldots}
+<<>>=
+mean_sd <- function(x) { 
+  m <- mean(x)
+  s <- sd(x)
+  paste0(formatC(m, digits = 2, format = "f"), " (", 
+         formatC(s, digits = 2, format = "f"), ")")
+}
+
+mean_sd(diamonds$price)
+mean_sd(diamonds$carat)
+mean_sd(diamonds$depth) 
+@
+\begin{itemize}
+  \item Good for a one-off project. Reuse? Share?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Create a Package}
+  \begin{itemize}
+    \item Well documented, shareable functions.
+    \item Easy to use on multiple projects.
+    \item Many very helpful tools exist to make package authorship easy.
+      \begin{itemize}
+        \item Thank you, Hadley Wickham, for 
+        \begin{itemize}
+          \item {\tt devtools} package 
+          \item {\tt roxygen2} package
+          \item The book {\bf R packages} \url{http://r-pkgs.had.co.nz/}
+        \end{itemize}
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Create a Package}
+  Create the skeleton of an R package.
+<<eval = FALSE>>=
+devtools::create("mypackage")
+@
+\begin{alltt}
+{\bf mypackage/}
+  |--{\bf R}
+  |---DESCRIPTION
+  |---mypackage.Rproj
+  `---NAMESPACE
+
+  1 directory, 3 files
+\end{alltt} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Edit the {\tt DESCRIPTION} file}
+  \begin{itemize}
+    \item Package Meta Data 
+    \item \url{http://r-pkgs.had.co.nz/description.html}
+  \end{itemize}
+  \vspace{0.2in}
+
+  {\it Generated File:}
+  \tiny
+  \begin{alltt}
+Package: mypackage
+Title: What the Package Does (one line, title case)
+Version: 0.0.0.9000
+Authors@R: person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph)
+Depends: R (>= 3.2.0)
+License: What license is it under?
+LazyData: true
+\end{alltt}
+\normalsize
+{\it Edited file:}
+\tiny
+\begin{alltt}
+Package: mypackage
+Title: A collection of helper functions
+Version: 0.0.0.9000
+Authors@R: person("Peter", "DeWitt", , "peter.dewitt@ucdenver", role = c("aut", "cre"))
+Description: Commonly used formatting functions.  A minimalist set of functions
+    used to show an example of building an R package.
+Depends: R (>= 3.0.2)
+License: GPL-2
+LazyData: true
+\end{alltt}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Add R Code}
+  \begin{itemize}
+    \item To add R code to your package add a file to the {\tt R/} directory:
+  \end{itemize}
+
+\begin{alltt}
+  vim mypackage/R/mean_sd.R
+\end{alltt}
+
+  \begin{itemize}
+    \item Within this file we will author the R code and the corresponding
+      documention.  
+    \item The function {\tt devtools::document()} will parse the R file(s) and
+      populate the needed {\tt man/} files.
+    \item[]
+    \item The following slides show the contents of the {\tt
+      mypackage/R/mean\_sd.R} file.  This version was copied from the {\tt
+      qwraps2} package I'm developing.
+      \begin{itemize}
+        \item \url{http://cran.r-project.org/web/packages/qwraps2/}
+        \item \url{https://github.com/dewittpe/qwraps2}
+      \end{itemize}
+  \end{itemize}
+
+
+\end{frame}
+
+
+\begin{frame}[fragile, allowframebreaks] 
+  \tiny
+\begin{verbatim}
+#' @title Mean and Standard deviation
+#'
+#' @description A function for calculating and formatting means and 
+#' standard deviations.
+#'
+#' @details
+#' Given a numeric vector, \code{mean_sd} will return a character string with
+#' the mean and standard deviation.  Formating of the output will be extended in
+#' future versions.
+#'
+#' @param x a numeric vector
+#' @param digits digits to the right of the decimal point to return in the
+#' percentage estimate.
+#' @param na_rm if true, omit NA values
+#' @param show_n defaults to "ifNA".  Other options are "always" or "never".
+#' @param denote_sd a character string set to either "pm" or "paren" for reporting 'mean
+#' \eqn{\pm} sd' or 'mean (sd)'
+#' @param markup latex or markdown
+#'
+#' @return a character vector of the formatted values
+#'
+#' @examples
+#' set.seed(42)
+#' x <- rnorm(1000, 3, 4)
+#' mean(x)
+#' sd(x)
+#' mean_sd(x)
+#' mean_sd(x, show_n = "always")
+#' mean_sd(x, show_n = "always", denote_sd = "paren")
+#' 
+#' x[187] <- NA
+#' mean_sd(x, na_rm = TRUE)
+#'
+#' @export   
+mean_sd <- function(x, 
+                    digits = getOption("qwraps2_frmt_digits", 2), 
+                    na_rm = FALSE, 
+                    show_n = "ifNA", 
+                    denote_sd = "pm", 
+                    markup = getOption("qwraps2_markup", "latex")) { 
+  n <- sum(!is.na(x))
+  m <- mean(x, na.rm = na_rm)
+  s <- sd(x, na.rm = na_rm)
+
+  if (show_n =="always" | any(is.na(x))) { 
+    rtn <- paste0(frmt(as.integer(n), digits), "; ", frmt(m, digits), " $\\pm$ ", frmt(s, digits))
+  } else { 
+    rtn <- paste0(frmt(m, digits), " $\\pm$ ", frmt(s, digits))
+  }
+
+  if (denote_sd == "paren") { 
+    rtn <- gsub("\\$\\\\pm\\$\\s(.*)", "\\(\\1\\)", rtn)
+  }
+
+  if (markup == "markdown") { 
+    rtn <- gsub("\\$\\\\pm\\$", "&plusmn;", rtn)
+  }
+
+  return(rtn)
+}
+
+\end{verbatim} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Current Directory Structure}
+\begin{alltt}
+{\bf mypackage/}
+  |--{\bf R}
+  |   `-- mean\_sd.R
+  |-- DESCRIPTION
+  |-- mypackage.Rproj
+  `-- NAMESPACE
+
+  1 directory, 4 files
+\end{alltt} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Generate the required documentation}
+<<eval = FALSE>>=
+devtools::document('mypackage')
+
+# Updating mypackage documentation
+# Loading mypackage
+# First time using roxygen2 4.0 Upgrading automatically...
+# Writing NAMESPACE
+# Writing mean_sd.Rd
+@
+\small
+\begin{alltt}
+{\bf mypackage/}
+  |--{\bf man}
+  |   `-- mean\_sd.Rd
+  |--{\bf R}
+  |   `-- mean\_sd.R
+  |-- DESCRIPTION
+  |-- mypackage.Rproj
+  `-- NAMESPACE
+
+  2 directory, 5 files
+\end{alltt} 
+\normalsize
+The next couple slides show the contents of {\tt mean\_sd.Rd}
+\end{frame}
+
+\begin{frame}[fragile, allowframebreaks]
+  % \frametitle{Generated Files}
+  \tiny
+\begin{verbatim}
+% Generated by roxygen2 (4.1.0): do not edit by hand
+% Please edit documentation in R/mean_sd.R
+\name{mean_sd}
+\alias{mean_sd}
+\title{Mean and Standard deviation}
+\usage{
+mean_sd(x, digits = getOption("qwraps2_frmt_digits", 2), na_rm = FALSE,
+  show_n = "ifNA", denote_sd = "pm", markup = getOption("qwraps2_markup",
+  "latex"))
+}
+\arguments{
+\item{x}{a numeric vector}
+
+\item{digits}{digits to the right of the decimal point to return in the
+percentage estimate.}
+
+\item{na_rm}{if true, omit NA values}
+
+\item{show_n}{defaults to "ifNA".  Other options are "always" or "never".}
+
+\item{denote_sd}{a character string set to either "pm" or "paren" for reporting 'mean
+\eqn{\pm} sd' or 'mean (sd)'}
+
+\item{markup}{latex or markdown}
+}
+\value{
+a character vector of the formatted values
+}
+\description{
+A function for calculating and formatting means and
+standard deviations.
+}
+\details{
+Given a numeric vector, \code{mean_sd} will return a character string with
+the mean and standard deviation.  Formating of the output will be extended in
+future versions.
+}
+\examples{
+set.seed(42)
+x <- rnorm(1000, 3, 4)
+mean(x)
+sd(x)
+mean_sd(x)
+mean_sd(x, show_n = "always")
+mean_sd(x, show_n = "always", denote_sd = "paren")
+
+x[187] <- NA
+mean_sd(x, na_rm = TRUE)
+}
+
+\end{verbatim} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \begin{itemize}
+    \item I've added code for a formating function {\tt frmt()} to the example
+      package too.
+    \item Evaluated {\tt devtools::document('mypackage/')} and
+  \end{itemize}
+\begin{alltt}
+{\bf mypackage/}
+  |--{\bf man}
+  |   |-- frmt.Rd
+  |   `-- mean\_sd.Rd
+  |--{\bf R}
+  |   |-- frmt.R
+  |   `-- mean\_sd.R
+  |-- DESCRIPTION
+  |-- mypackage.Rproj
+  `-- NAMESPACE
+
+  2 directory, 7 files
+\end{alltt} 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Building the Package}
+<<eval=FALSE>>=
+devtools::build("mypackage/")
+# 'usr/lib/R/bin/R' --vanilla CMD build \
+# '/home/dewittpe/drug--r-pkg-talk/mypackage' \
+# --no-resave-data --noanual
+#
+# * checking for file '/home/dewittpe/drug-r-pkg-talk/mypackage/DESCRIPTION' ...  OK
+# * preparing 'mypackage':
+# * checking DESCRIPTION meta-information ... OK
+# * checking for LF line-endings in source and make files
+# * checking for empty or unneeded directories
+# * building 'mypackage_0.0.0.9000.tar.gz'
+#
+# [1] "/home/dewittpe/drug-r-pkg-talk/mypackage_0.0.0.9000.tar.gz" 
+@
+\begin{itemize}
+  \item Can also be done from the command line via {\tt R CMD BUILD}. 
+  \item {\tt devtools::install()} is calling {\tt R CMD BUILD}.
+  \item Send the {\tt .tar.gz} files to others to install the package on their
+    machine(s).
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Install the Package}
+  \begin{itemize}
+    \item Do so via {\tt R CMD INSTALL}, or
+    \item {\tt install.packages()}, or
+    \item {\tt devtools::install()}.
+  \end{itemize}
+  \small
+<<eval=FALSE>>=
+# use with_libpaths() to change the library the package is installed too
+devtools::with_libpaths("r-dev", devtools::install("mypackage/"))
+## Installing mypackage
+## '/usr/lib/R/bin/R' --vanilla CMD INSTALL  \
+##   '/home/dewittpe/drug-r-pkg-talk/mypackage'  \
+##   --library='/home/dewittpe/drug-r-pkg-talk/r-dev' --install-tests 
+## 
+## * installing *source* package ‘mypackage’ ...
+## ** R
+## ** preparing package for lazy loading
+## ** help
+## *** installing help indices
+## ** building package indices
+## ** testing if installed package can be loaded
+## * DONE (mypackage)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Check the install}
+
+<<>>=
+rm(list = ls())
+# data("diamonds", package = "ggplot2")
+library(package = "mypackage", lib.loc = "r-dev")
+frmt(pi)
+# mead_sd(3.0, markdup = "markdown")
+
+## "3,932.80 \\$\\pm\\$ 3,989.44"
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Using Code from Other Packages}
+  \begin{itemize}
+    \item First, you'll need to edit the {\tt DESCRIPTION} file.
+      \begin{itemize}
+        \item Import packages (loaded by namespace),
+        \item Depends on is `poor form.'
+      \end{itemize}
+    \item Second, the {\tt ::} operator is your friend.
+      \begin{itemize}
+        \item Requires the package to be loaded.
+        \item Does not require attaching a package.
+      \end{itemize}
+
+    \item Example: lets look at the file {mypackage/R/qroc.R}
+
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Using the {\tt ::} operator}
+somthing
+
+
+something
+\end{frame}
+
+
+\end{document}
