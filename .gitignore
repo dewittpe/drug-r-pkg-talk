@@ -1,0 +1,13 @@
+# vim temp/backup files
+*.sw[op]
+
+# archive files
+*.tar.gz
+
+# the directory where the example package is installed.
+r-dev/*
+
+# ignore all the files related to the slides.  
+# add the files you need to track with git add -f
+# this is easier than writting out all the file extensions.
+simple-r-packages.*
