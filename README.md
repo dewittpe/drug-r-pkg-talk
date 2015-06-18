@@ -9,7 +9,7 @@ R package.
 
 ----
 
-To rebuild the slides:
+To rebuild the slides you'll need to have the [`knitr`](https://github.com/yihui/knitr) package installed and then run the following in your terminal.
 
 ```bash
 mkdir r-dev
