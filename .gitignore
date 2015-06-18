@@ -11,6 +11,8 @@ r-dev/*
 # add the files you need to track with git add -f
 # this is easier than writting out all the file extensions.
 simple-r-packages.*
+R.log
+figure/*
 
 # ignore RStudio project files
 mypackage.Rproj

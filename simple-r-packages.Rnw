@@ -45,19 +45,6 @@ opts_chunk$set(fig.align = "center",
   \maketitle
 \end{frame} 
 
-\begin{frame}[fragile]
-  \frametitle{Goals:}
-  \begin{itemize}
-    \item Show how to build an R package for personal use.
-    \item Show how to build an R package for everyone to use.
-      \begin{itemize}
-        \item github
-        \item Comprehensive R Archive Network (CRAN)
-      \end{itemize} 
-    \item Introduce some of the features of {\tt devtools}.
-  \end{itemize}
-\end{frame}
-
 \section{Simple Code}
 \begin{frame}[fragile]
   \frametitle{Common Tasks?}
@@ -83,24 +70,15 @@ opts_chunk$set(fig.align = "center",
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{R set up}
-<<>>=
-# data set for examples
-data('diamonds', package = 'ggplot2')
-dplyr::glimpse(diamonds)
-@
-\end{frame}
-
-\begin{frame}[fragile]
   \frametitle{Please don't do this}
 <<>>=
+data('diamonds', package = 'ggplot2')
 mean_price <- mean(diamonds$price)
 mean_carat <- mean(diamonds$carat)
 mean_depth <- mean(diamonds$depth)
 sd_price   <- sd(diamonds$price)
 sd_carat   <- sd(diamonds$carat)
-sd_depth   <- sd(diamonds$depth)
-
+sd_depth   <- sd(diamonds$depth) 
 paste0(formatC(mean_price, digits = 2, format = "f"), " (", 
        formatC(sd_price,   digits = 2, format = "f"), ")")
 paste0(formatC(mean_carat, digits = 2, format = "f"), " (", 
@@ -125,7 +103,7 @@ mean_sd(diamonds$carat)
 mean_sd(diamonds$depth) 
 @
 \begin{itemize}
-  \item Good for a one-off project. Reuse? Share?
+  \item Good for a one-off project. Documentation? Reuse? Share?
 \end{itemize}
 \end{frame}
 
@@ -140,7 +118,7 @@ mean_sd(diamonds$depth)
         \begin{itemize}
           \item {\tt devtools} package 
           \item {\tt roxygen2} package
-          \item The book {\bf R packages} \url{http://r-pkgs.had.co.nz/}
+          \item The book {\it R packages} \url{http://r-pkgs.had.co.nz/}
         \end{itemize}
       \end{itemize}
   \end{itemize}
@@ -211,7 +189,7 @@ LazyData: true
 
   \begin{itemize}
     \item Within this file we will author the R code and the corresponding
-      documention.  
+      documention via roxygen comments (prefaced with {\verb|#'|}).  
     \item The function {\tt devtools::document()} will parse the R file(s) and
       populate the needed {\tt man/} files.
     \item[]
@@ -489,10 +467,11 @@ mean_sd(diamonds$price, markup = "markdown")
 \begin{frame}[fragile]
   \frametitle{Using Code from Other Packages}
   \begin{itemize}
-    \item First, you'll need to edit the {\tt DESCRIPTION} file.
+    \item First, you'll need to edit the {\tt DESCRIPTION} file for your
+      package.
       \begin{itemize}
-        \item Import packages (loaded by namespace),
-        \item Depends on is `poor form.'
+        \item {\tt Imports} packages (loaded by namespace),
+        \item {\tt Depends} on is `poor form.'
       \end{itemize}
     \item Second, the {\tt ::} operator is your friend.
       \begin{itemize}
@@ -501,9 +480,28 @@ mean_sd(diamonds$price, markup = "markdown")
         \item Robust to end user's attached, and order of attaching, packages.
       \end{itemize}
 
-    \item Example: lets look at the file {mypackage/R/qroc.R}
+    \item Next slide: updated {\tt DESCRIPTION} file.
+    \item We'll look at the file {mypackage/R/qroc.R}
 
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Updated {\tt DESCRIPTION} file}
+  \scriptsize
+\begin{verbatim}
+Package: mypackage
+Title: A collection of helper functions
+Version: 0.0.0.9000
+Authors@R: person("Peter", "DeWitt", , "peter.dewitt@ucdenver", role = c("aut", "cre"))
+Description: Commonly used formatting functions.  A minimalist set of functions
+    used to show an example of building an R package.
+Depends: R (>= 3.0.2)
+License: GPL-2
+LazyData: true
+Imports:
+  ggplot2
+\end{verbatim}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -562,12 +560,18 @@ qroc(fit1) + ggplot2::theme_bw()
         \item Development versions of what is on CRAN.
         \item Some only available on github.
       \end{itemize}
+    \item Version control, releases, issue tracking, \ldots
     \item Others can install your package via
 <<eval = FALSE>>=
 devtools::install_github()
 @
-    \item Functions for installing from other hosting sites, e.g.,
-      bitbucket.org, are included in {\tt devtools} as well.
+    \item Barebone websites
+
+    \item {\it R packages} has a great chapter on git:
+      \url{http://r-pkgs.had.co.nz/git.html}
+
+    \item {\tt devtools} has functions for installing from \url{bitbucket.org}
+      and other hosting sites.
   \end{itemize}
 \end{frame}
 
@@ -591,25 +595,6 @@ devtools::install_github()
       \end{itemize}
     \item CRAN reviewers are mean, blunt, pompus, \ldots (All of which
       are well deserved and earned traits)
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{My Suggestions}
-  \begin{itemize}
-    \item Read {\it R Packages} by Hadley Wickham,
-      \url{http://r-pkgs.had.co.nz/}
-    \item Thanks to {\tt devtools} writting a package for personal use is
-      reasonable for all levels of R users.
-    \item Write simple, short functions.  Many robust, simple, and specific
-      functions is preferable to a few complex functions.
-    \item Writting a package will help you learn a lot about how R works in
-      general.  It will help improve your coding overall.
-    \item Host on github.com
-    \item Use TravisCI
-    \item It's FUN!
-    \item Having a package on CRAN is a nice `feather in your hat.' 
-    \item[]
   \end{itemize}
 \end{frame}
 
@@ -640,9 +625,29 @@ aplot <- function(x, y) {
   ggplot2::aes_string(x = "xvec", y = "yvec") + 
   ggplot2::geom_point()
 } 
-@
-  
+@ 
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{My Suggestions}
+  \begin{itemize}
+    \item Read {\it R Packages} by Hadley Wickham,
+      \url{http://r-pkgs.had.co.nz/}
+    \item Thanks to {\tt devtools} writting a package for personal use is
+      reasonable for all levels of R users.
+    \item Write simple, short functions.  Many robust, simple, and specific
+      functions is preferable to a few complex functions.
+    \item Writting a package will help you learn a lot about how R works in
+      general.  It will help improve your coding overall.
+    \item Host on github.com
+    \item Use TravisCI
+    \item It's FUN!
+    \item Can be lucritive.
+    \item Having a package on CRAN is a nice `feather in your hat.' 
+    \item[]
+  \end{itemize}
+\end{frame}
+
 
 \begin{frame}[fragile]
   \frametitle{Closing}
@@ -653,6 +658,9 @@ aplot <- function(x, y) {
     \item Side note: We are always looking for speakers.  Any one, from novice
       to expert, is welcome to give a talk, even a short one.
   \end{itemize}
+
+  \vspace{0.5in}
+
   \begin{center}
     Thank you for listening.
 
